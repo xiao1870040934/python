@@ -79,6 +79,16 @@ class ALienInvasion:
             alien.rect.y += self.settings.fleet_drop_speed
         self.settings.fleet_direction *= -1
 
+    def _check_bullet_alien_collisions(self):
+        """响应子弹和外星人碰撞"""
+        # 检查是否有子弹击中外星人
+        # 如果是，就删除相应的子弹和外星人
+        collections = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+        if not self.aliens:
+            # 删除现有的所有子弹，并创建一群新的外星人
+            self.bullets.empty()
+            self._create_fleet()
+
     def _create_fleet(self):
         """"创建外星人群"""
         # 创建一个外星人并计算一行可容纳多少个外星人
@@ -132,6 +142,10 @@ class ALienInvasion:
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
+
+        self._check_bullet_alien_collisions()
+
+
 
     def _update_aliens(self):
         """"检查是否有外星人位于屏幕边缘，更新外星人群中所有外星人的位置"""
