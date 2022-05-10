@@ -5,6 +5,8 @@ from settings import Settings
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
+from time import sleep
+from game_stats import GameStatus
 
 
 class ALienInvasion:
@@ -20,6 +22,9 @@ class ALienInvasion:
         self.settings.screen_width = self.screen.get_rect().width
         self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
+
+        # 创建一个用于存储游戏统计信息的实例
+        self.stats = GameStatus(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -89,6 +94,14 @@ class ALienInvasion:
             self.bullets.empty()
             self._create_fleet()
 
+    def _check_aliens_bottom(self):
+        screen_rect = self.screen.get_rect()
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= screen_rect.bottom:
+                # 像飞船被撞到一样处理
+                self._ship_hit()
+                break
+
     def _create_fleet(self):
         """"创建外星人群"""
         # 创建一个外星人并计算一行可容纳多少个外星人
@@ -124,6 +137,25 @@ class ALienInvasion:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
 
+    def _ship_hit(self):
+        """响应飞船被外星人撞到"""
+        if self.stats.ships_left > 0:
+            # 将ships_left减1
+            self.stats.ships_left -= 1
+
+            # 将清空余下的外星人和子弹
+            self.aliens.empty()
+            self.bullets.empty()
+
+            # 创建一群新的外星人，并将飞船放置到屏幕底端
+            self._create_fleet()
+            self.ship.center_ship()
+
+            # 暂停
+            sleep(0.5)
+        else:
+            self.stats.game_active = False
+
     def _update_screen(self):
         """更新屏幕上的图像，并切换到新屏幕"""
         self.screen.fill(self.settings.bg_color)
@@ -145,12 +177,17 @@ class ALienInvasion:
 
         self._check_bullet_alien_collisions()
 
-
-
     def _update_aliens(self):
         """"检查是否有外星人位于屏幕边缘，更新外星人群中所有外星人的位置"""
         self._check_fleet_edges()
         self.aliens.update()
+
+        # 检测外星人和飞船之间的碰撞
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            self._ship_hit()
+
+        # 检测是否有外星人到达了屏幕底端
+        self._check_aliens_bottom()
 
 
 if __name__ == '__main__':
