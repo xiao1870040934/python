@@ -8,6 +8,7 @@ from alien import Alien
 from time import sleep
 from game_stats import GameStatus
 from button import Button
+from scoreboard import Scoreboard
 
 
 class ALienInvasion:
@@ -25,7 +26,9 @@ class ALienInvasion:
         pygame.display.set_caption("Alien Invasion")
 
         # 创建一个用于存储游戏统计信息的实例
+        # 并创建计分牌
         self.stats = GameStatus(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -90,6 +93,9 @@ class ALienInvasion:
         """在玩家单击Play按钮时开始新游戏。"""
         button_clicked = self.play_button.rect.collidepoint(mouse_pos)
         if button_clicked and not self.stats.game_active:
+            # 重置游戏设置
+            self.settings.initialize_dynamic_settings()
+
             # 重置游戏统计信息。
             self.stats.reset_stats()
             self.stats.game_active = True
@@ -120,6 +126,7 @@ class ALienInvasion:
             # 删除现有的所有子弹，并创建一群新的外星人
             self.bullets.empty()
             self._create_fleet()
+            self.settings.increase_speed()
 
     def _check_aliens_bottom(self):
         screen_rect = self.screen.get_rect()
@@ -191,6 +198,9 @@ class ALienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        # 显示得分
+        self.sb.show_score()
 
         # 如果游戏处于非活动状态，就绘制Play按钮
         if not self.stats.game_active:
