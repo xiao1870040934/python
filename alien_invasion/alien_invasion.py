@@ -99,6 +99,9 @@ class ALienInvasion:
             # 重置游戏统计信息。
             self.stats.reset_stats()
             self.stats.game_active = True
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
 
             # 清空余下的外星人和子弹
             self.aliens.empty()
@@ -121,12 +124,21 @@ class ALienInvasion:
         """响应子弹和外星人碰撞"""
         # 检查是否有子弹击中外星人
         # 如果是，就删除相应的子弹和外星人
-        collections = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+        collisions = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+            self.sb.prep_score()
+            self.sb.check_high_score()
         if not self.aliens:
             # 删除现有的所有子弹，并创建一群新的外星人
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+
+            # 提高等级
+            self.stats.level += 1
+            self.sb.prep_level()
 
     def _check_aliens_bottom(self):
         screen_rect = self.screen.get_rect()
@@ -174,8 +186,9 @@ class ALienInvasion:
     def _ship_hit(self):
         """响应飞船被外星人撞到"""
         if self.stats.ships_left > 0:
-            # 将ships_left减1
+            # 将ships_left减1并更新记分牌
             self.stats.ships_left -= 1
+            self.sb.prep_ships()
 
             # 将清空余下的外星人和子弹
             self.aliens.empty()
